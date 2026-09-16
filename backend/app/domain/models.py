@@ -2,6 +2,7 @@ from datetime import datetime, date
 from typing import List, Optional
 from enum import Enum
 from pydantic import BaseModel, Field
+from typing import Any, Dict
 
 # --- ENUMERACIONES DEL NEGOCIO ---
 class EstadoLote(str, Enum):
@@ -130,3 +131,16 @@ class DeliveryResponse(BaseModel):
     costo_envio_dop: float
     estado: EstadoDelivery
     creado_en: datetime
+    
+
+
+class OrigenCanal(str, Enum):
+    WHATSAPP = "WHATSAPP"
+    INSTAGRAM = "INSTAGRAM"
+    FACEBOOK = "FACEBOOK"
+    WEB_FORM = "WEB_FORM"
+
+class EventoOmnicanalCreate(BaseModel):
+    canal: OrigenCanal
+    payload: Dict[str, Any]
+    identificador_externo: Optional[str] = None

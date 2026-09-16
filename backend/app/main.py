@@ -9,6 +9,8 @@ from .adapters.supa_base_repository import SupabaseSaleRepository
 from .domain.models import DeliveryCreate, DeliveryResponse, EstadoDelivery
 from .domain.services import DeliveryService
 from .adapters.supa_base_repository import SupabaseDeliveryRepository
+from .domain.models import EventoOmnicanalCreate
+from .adapters.supa_base_repository import SupabaseOmnichannelRepository
 
 app = FastAPI(
     title="Apex Nutrition API",
@@ -129,5 +131,17 @@ def actualizar_estado_delivery(delivery_id: str, estado: EstadoDelivery):
         return delivery_repo.update_delivery_status(delivery_id, estado.value)
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+
+omni_repo = SupabaseOmnichannelRepository()
+
+@app.post("/webhooks/omnicanal", status_code=202)
+def recibir_evento_omnicanal(evento: EventoOmnicanalCreate):
+    """Recibe webhooks de n8n con ventas o mensajes entrantes."""
+    try:
+        resultado = omni_repo.log_event(evento)
+        return {"status": "Evento recibido y encolado", "evento_id": resultado["id"]}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

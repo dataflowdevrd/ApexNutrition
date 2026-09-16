@@ -162,3 +162,16 @@ class SupabaseDeliveryRepository(DeliveryRepositoryPort):
         if not res.data:
             raise LookupError("Delivery no encontrado")
         return res.data[0]
+    
+class SupabaseOmnichannelRepository:
+    def log_event(self, evento) -> dict:
+        data = {
+            "canal_origen": evento.canal.value,
+            "tipo_evento": evento.payload.get("evento", "WEBHOOK"),
+            "payload_json": evento.payload,
+            "estado_procesamiento": "PENDIENTE"
+        }
+        res = supabase.table("n8n_eventos_omnicanal").insert(data).execute()
+        if not res.data:
+            raise Exception("No se pudo registrar el evento omnicanal")
+        return res.data[0]
