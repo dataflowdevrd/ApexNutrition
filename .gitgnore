@@ -16,3 +16,6 @@ __pycache__/
 # Archivos de VS Code / SO
 .vscode/
 .DS_Store
+
+.env
+.env.*
