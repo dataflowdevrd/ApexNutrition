@@ -1,0 +1,18 @@
+# Entornos virtuales
+venv/
+env/
+.venv/
+
+# Archivos de variables de entorno y credenciales
+.env
+*.pem
+*.json
+!n8n-workflows/*.json
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+
+# Archivos de VS Code / SO
+.vscode/
+.DS_Store

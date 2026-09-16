@@ -1,0 +1,22 @@
+[
+  {
+    "path": "c:/Users/PC/Desktop/Apex Nutrition/backend",
+    "colorName": "Blue",
+    "badgeType": "square"
+  },
+  {
+    "path": "c:/Users/PC/Desktop/Apex Nutrition/dashboard",
+    "colorName": "Red",
+    "badgeType": "square"
+  },
+  {
+    "path": "c:/Users/PC/Desktop/Apex Nutrition/docs",
+    "colorName": "Green",
+    "badgeType": "square"
+  },
+  {
+    "path": "c:/Users/PC/Desktop/Apex Nutrition/n8nWorkFlows",
+    "colorName": "Orange",
+    "badgeType": "square"
+  }
+]
