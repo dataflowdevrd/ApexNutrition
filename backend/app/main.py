@@ -6,6 +6,9 @@ from .adapters.supa_base_repository import SupabaseProductRepository, SupabaseLo
 from .domain.models import VentaCreate, VentaResponse
 from .domain.services import BillingService
 from .adapters.supa_base_repository import SupabaseSaleRepository
+from .domain.models import DeliveryCreate, DeliveryResponse, EstadoDelivery
+from .domain.services import DeliveryService
+from .adapters.supa_base_repository import SupabaseDeliveryRepository
 
 app = FastAPI(
     title="Apex Nutrition API",
@@ -97,5 +100,34 @@ def registrar_venta(venta: VentaCreate):
         # Persistir venta y descontar stock automáticamente
         resultado = sale_repo.create_sale(venta, subtotal, itbis, total, ncf)
         return resultado
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+
+delivery_repo = SupabaseDeliveryRepository()
+
+@app.post("/deliveries", response_model=DeliveryResponse, status_code=201)
+def programar_delivery(delivery: DeliveryCreate):
+    try:
+        costo = DeliveryService.calcular_tarifa_envio(delivery.distancia_km)
+        resultado = delivery_repo.create_delivery(delivery, costo)
+        return resultado
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/ventas/{venta_id}/delivery")
+def consultar_delivery_por_venta(venta_id: str):
+    delivery = delivery_repo.get_delivery_by_sale(venta_id)
+    if not delivery:
+        raise HTTPException(status_code=404, detail="No existe despacho asociado a esta venta")
+    return delivery
+
+@app.patch("/deliveries/{delivery_id}/estado")
+def actualizar_estado_delivery(delivery_id: str, estado: EstadoDelivery):
+    try:
+        return delivery_repo.update_delivery_status(delivery_id, estado.value)
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

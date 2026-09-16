@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from ..domain.models import Lote, LoteUpdate, Producto, ProductoUpdate
 from ..domain.models import VentaCreate, VentaResponse
+from ..domain.models import DeliveryCreate, DeliveryResponse
 
 class ProductRepositoryPort(ABC):
     @abstractmethod
@@ -42,4 +43,19 @@ class LotRepositoryPort(ABC):
 class SaleRepositoryPort(ABC):
     @abstractmethod
     def create_sale(self, venta: VentaCreate, subtotal: float, itbis: float, total: float, ncf: str) -> dict:
+        pass
+    
+
+
+class DeliveryRepositoryPort(ABC):
+    @abstractmethod
+    def create_delivery(self, delivery: DeliveryCreate, costo_envio: float) -> dict:
+        pass
+
+    @abstractmethod
+    def get_delivery_by_sale(self, venta_id: str) -> Optional[dict]:
+        pass
+
+    @abstractmethod
+    def update_delivery_status(self, delivery_id: str, status: str) -> dict:
         pass

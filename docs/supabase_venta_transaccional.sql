@@ -21,6 +21,21 @@ create policy "anon_eliminar_lotes"
 on public.lotes for delete to anon
 using (true);
 
+drop policy if exists "anon_insertar_deliveries" on public.deliveries;
+create policy "anon_insertar_deliveries"
+on public.deliveries for insert to anon
+with check (true);
+
+drop policy if exists "anon_leer_deliveries" on public.deliveries;
+create policy "anon_leer_deliveries"
+on public.deliveries for select to anon
+using (true);
+
+drop policy if exists "anon_actualizar_deliveries" on public.deliveries;
+create policy "anon_actualizar_deliveries"
+on public.deliveries for update to anon
+using (true) with check (true);
+
 drop trigger if exists trg_descontar_stock on public.detalle_ventas;
 
 drop function if exists public.registrar_venta_transaccional(

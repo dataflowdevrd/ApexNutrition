@@ -1,9 +1,10 @@
-from typing import List
+from typing import List, Optional
 from ..ports.repositories import ProductRepositoryPort, LotRepositoryPort
 from ..domain.models import Lote, LoteUpdate, Producto, ProductoUpdate
 from .database import supabase
 import random
 from ..ports.repositories import SaleRepositoryPort
+from ..ports.repositories import DeliveryRepositoryPort
 import uuid
 
 class SupabaseProductRepository(ProductRepositoryPort):
@@ -135,3 +136,29 @@ class SupabaseSaleRepository(SaleRepositoryPort):
         if not response.data:
             raise RuntimeError("Supabase no devolvió la venta creada")
         return response.data if isinstance(response.data, dict) else response.data[0]
+
+
+
+class SupabaseDeliveryRepository(DeliveryRepositoryPort):
+    def create_delivery(self, delivery, costo_envio: float) -> dict:
+        data = {
+            "venta_id": delivery.venta_id,
+            "direccion_destino": delivery.direccion_destino,
+            "distancia_km": delivery.distancia_km,
+            "costo_envio_dop": costo_envio,
+            "estado": "PENDIENTE"
+        }
+        res = supabase.table("deliveries").insert(data).execute()
+        if not res.data:
+            raise Exception("Error al registrar el delivery en la base de datos.")
+        return res.data[0]
+
+    def get_delivery_by_sale(self, venta_id: str) -> Optional[dict]:
+        res = supabase.table("deliveries").select("*").eq("venta_id", venta_id).execute()
+        return res.data[0] if res.data else None
+
+    def update_delivery_status(self, delivery_id: str, status: str) -> dict:
+        res = supabase.table("deliveries").update({"estado": status}).eq("id", delivery_id).execute()
+        if not res.data:
+            raise LookupError("Delivery no encontrado")
+        return res.data[0]

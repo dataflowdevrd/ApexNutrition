@@ -17,3 +17,17 @@ class BillingService:
         itbis = round(subtotal * cls.ITBIS_RATE, 2) if venta_data.aplica_itbis else 0.0
         total = round(subtotal + itbis, 2)
         return round(subtotal, 2), itbis, total
+
+class DeliveryService:
+    TARIFA_BASE_DOP = 150.00    # Tarifa inicial para los primeros 3 km
+    COSTO_POR_KM_EXTRA = 35.00  # Costo por kilómetro adicional
+    KM_BASE = 3.0
+
+    @classmethod
+    def calcular_tarifa_envio(cls, distancia_km: float) -> float:
+        """Calcula el costo de entrega en base a la distancia en km."""
+        if distancia_km <= cls.KM_BASE:
+            return cls.TARIFA_BASE_DOP
+        km_adicionales = distancia_km - cls.KM_BASE
+        costo_total = cls.TARIFA_BASE_DOP + (km_adicionales * cls.COSTO_POR_KM_EXTRA)
+        return round(costo_total, 2)

@@ -111,3 +111,22 @@ class VentaResponse(BaseModel):
     total: float
     estado: str
     creado_en: datetime
+    
+class DeliveryCreate(BaseModel):
+    venta_id: str
+    direccion_destino: str
+    sector: Optional[str] = None
+    distancia_km: float = Field(gt=0, description="Distancia estimada desde el centro de distribución")
+    contacto_receptor: Optional[str] = None
+    telefono_receptor: Optional[str] = None
+    notas_entrega: Optional[str] = None
+
+class DeliveryResponse(BaseModel):
+    id: str
+    venta_id: str
+    direccion_destino: str
+    sector: Optional[str] = None
+    distancia_km: float
+    costo_envio_dop: float
+    estado: EstadoDelivery
+    creado_en: datetime
