@@ -1,12 +1,13 @@
 from fastapi import FastAPI, HTTPException
 from typing import List
 import random
+import requests
 from .domain.models import Lote, LoteUpdate, Producto, ProductoUpdate
 from .adapters.supa_base_repository import SupabaseProductRepository, SupabaseLotRepository
 from .domain.models import VentaCreate, VentaResponse
 from .domain.services import BillingService
 from .adapters.supa_base_repository import SupabaseSaleRepository
-from .domain.models import DeliveryCreate, DeliveryResponse, EstadoDelivery
+from .domain.models import DeliveryCreate, DeliveryResponse, EstadoDelivery, DeliveryQuoteRequest, DeliveryQuoteResponse
 from .domain.services import DeliveryService
 from .adapters.supa_base_repository import SupabaseDeliveryRepository
 from .domain.models import EventoOmnicanalCreate
@@ -109,11 +110,35 @@ def registrar_venta(venta: VentaCreate):
 
 delivery_repo = SupabaseDeliveryRepository()
 
+@app.post("/deliveries/cotizar", response_model=DeliveryQuoteResponse)
+def cotizar_delivery(ubicacion: DeliveryQuoteRequest):
+    try:
+        return DeliveryService.cotizar_ruta(
+            ubicacion.destino_lat,
+            ubicacion.destino_lng,
+            ubicacion.origen_lat,
+            ubicacion.origen_lng,
+        )
+    except requests.RequestException as error:
+        raise HTTPException(status_code=502, detail=f"Google Maps no respondió: {error}")
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error))
+
 @app.post("/deliveries", response_model=DeliveryResponse, status_code=201)
 def programar_delivery(delivery: DeliveryCreate):
     try:
-        costo = DeliveryService.calcular_tarifa_envio(delivery.distancia_km)
+        distancia = delivery.distancia_km
+        if delivery.destino_lat is not None and delivery.destino_lng is not None:
+            quote = DeliveryService.cotizar_ruta(delivery.destino_lat, delivery.destino_lng)
+            distancia = quote.distancia_km
+            costo = quote.costo_envio_dop
+        elif distancia is not None:
+            costo = DeliveryService.calcular_tarifa_envio(distancia)
+        else:
+            raise ValueError("Envía destino_lat y destino_lng, o distancia_km, para calcular el delivery")
+        delivery.distancia_km = distancia
         resultado = delivery_repo.create_delivery(delivery, costo)
+        resultado["distancia_km"] = distancia
         return resultado
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

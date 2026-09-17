@@ -117,10 +117,26 @@ class DeliveryCreate(BaseModel):
     venta_id: str
     direccion_destino: str
     sector: Optional[str] = None
-    distancia_km: float = Field(gt=0, description="Distancia estimada desde el centro de distribución")
+    distancia_km: Optional[float] = Field(default=None, gt=0, description="Distancia estimada; se calcula con Google Maps si se envían coordenadas")
     contacto_receptor: Optional[str] = None
     telefono_receptor: Optional[str] = None
     notas_entrega: Optional[str] = None
+    destino_lat: Optional[float] = None
+    destino_lng: Optional[float] = None
+
+
+class DeliveryQuoteRequest(BaseModel):
+    destino_lat: float
+    destino_lng: float
+    origen_lat: Optional[float] = None
+    origen_lng: Optional[float] = None
+
+
+class DeliveryQuoteResponse(BaseModel):
+    distancia_km: float
+    duracion_minutos: Optional[int] = None
+    costo_envio_dop: float
+    proveedor: str
 
 class DeliveryResponse(BaseModel):
     id: str
@@ -131,6 +147,8 @@ class DeliveryResponse(BaseModel):
     costo_envio_dop: float
     estado: EstadoDelivery
     creado_en: datetime
+    destino_lat: Optional[float] = None
+    destino_lng: Optional[float] = None
     
 
 

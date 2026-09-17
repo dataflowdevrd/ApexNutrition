@@ -148,6 +148,9 @@ class SupabaseDeliveryRepository(DeliveryRepositoryPort):
             "costo_envio_dop": costo_envio,
             "estado": "PENDIENTE"
         }
+        if delivery.destino_lat is not None and delivery.destino_lng is not None:
+            data["destino_lat"] = delivery.destino_lat
+            data["destino_lng"] = delivery.destino_lng
         res = supabase.table("deliveries").insert(data).execute()
         if not res.data:
             raise Exception("Error al registrar el delivery en la base de datos.")
