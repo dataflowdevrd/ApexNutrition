@@ -18,5 +18,10 @@
     "path": "c:/Users/PC/Desktop/Apex Nutrition/n8nWorkFlows",
     "colorName": "Orange",
     "badgeType": "square"
+  },
+  {
+    "path": "c:/Users/PC/Desktop/Apex Nutrition/backend/app",
+    "colorName": "Blue",
+    "badgeType": "square"
   }
 ]

@@ -144,6 +144,14 @@ st.markdown("""
         background: rgba(88, 166, 255, 0.16);
         border-color: rgba(88, 166, 255, 0.45);
     }
+    /* Dropdown cerrado: se puede escoger con clic, pero no escribir texto. */
+    [data-testid="stSelectbox"] [data-baseweb="select"] input {
+        opacity: 0 !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        position: absolute !important;
+        pointer-events: none !important;
+    }
     @media (max-width: 760px) {
         .brand-title { font-size: 25px; }
         .card { padding: 16px; }
@@ -173,6 +181,13 @@ st.markdown("""
         color: white !important;
         border-radius: 8px !important;
         backdrop-filter: blur(12px);
+    }
+    /* Los selectores se usan solo como menus: no permiten escribir texto. */
+    [data-baseweb="select"] input {
+        caret-color: transparent !important;
+        color: transparent !important;
+        width: 1px !important;
+        pointer-events: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -207,6 +222,22 @@ def ncf_label(code):
 def product_field(row, name, fallback=0):
     product = row.get("productos")
     return product.get(name, fallback) if isinstance(product, dict) else fallback
+
+
+def save_delivery_status(delivery_id, widget_key):
+    selected_state = st.session_state[widget_key]
+    try:
+        response = requests.patch(
+            f"{API_URL}/deliveries/{delivery_id}/estado",
+            params={"estado": selected_state},
+            timeout=10,
+        )
+        if response.ok:
+            st.session_state["delivery_status_message"] = "Estado actualizado automáticamente."
+        else:
+            st.session_state["delivery_status_error"] = "No se pudo actualizar el estado."
+    except requests.RequestException:
+        st.session_state["delivery_status_error"] = "No se pudo conectar con la API."
 
 @st.cache_resource
 def init_supabase() -> Client:
@@ -592,6 +623,10 @@ elif menu == "Logística":
                 st.error(quote_response.json().get("detail", "No se pudo calcular la ruta."))
 
     if not df_d.empty:
+        if st.session_state.pop("delivery_status_message", None):
+            st.success("Estado actualizado automáticamente.")
+        if st.session_state.pop("delivery_status_error", None):
+            st.error("No se pudo actualizar el estado.")
         logistics_filter = st.selectbox("Filtrar por estado", ["Todos"] + sorted(df_d["estado"].dropna().astype(str).unique().tolist()) if "estado" in df_d else ["Todos"])
         visible_deliveries = df_d if logistics_filter == "Todos" or "estado" not in df_d else df_d[df_d["estado"].astype(str) == logistics_filter]
         delivery_columns = st.columns(3)
@@ -609,35 +644,22 @@ elif menu == "Logística":
                 next_state = st.selectbox(
                     "Estado del pedido",
                     status_options,
+                    format_func=lambda value: value.replace("_", " "),
                     index=status_options.index(state) if state in status_options else 0,
                     key=f"delivery_state_{field(delivery, 'id', index)}",
+                    on_change=save_delivery_status,
+                    args=(field(delivery, "id"), f"delivery_state_{field(delivery, 'id', index)}"),
                     label_visibility="collapsed",
                 )
-                action_col1, action_col2 = st.columns(2)
-                with action_col1:
-                    if st.button("Actualizar", key=f"update_delivery_{field(delivery, 'id', index)}", use_container_width=True):
-                        update_response = requests.patch(
-                            f"{API_URL}/deliveries/{field(delivery, 'id')}/estado",
-                            params={"estado": next_state},
-                            timeout=10,
-                        )
-                        if update_response.ok:
-                            st.success("Estado actualizado")
-                            st.rerun()
-                        else:
-                            st.error("No se pudo actualizar el estado")
-                with action_col2:
-                    destination = field(delivery, "direccion_destino", "")
-                    latitude = field(delivery, "destino_lat", None)
-                    longitude = field(delivery, "destino_lng", None)
-                    if latitude is not None and longitude is not None:
-                        maps_url = f"https://www.openstreetmap.org/?mlat={latitude}&mlon={longitude}#map=17/{latitude}/{longitude}"
-                        route_label = "Vista mapa"
-                    else:
-                        query = f"{destination}, {field(delivery, 'sector', 'Santo Domingo')}, República Dominicana"
-                        maps_url = f"https://www.openstreetmap.org/search?query={requests.utils.quote(str(query))}"
-                        route_label = "Vista mapa"
-                    st.markdown(f'<a class="map-link" href="{maps_url}" target="_blank">{route_label}</a>', unsafe_allow_html=True)
+                destination = field(delivery, "direccion_destino", "")
+                latitude = field(delivery, "destino_lat", None)
+                longitude = field(delivery, "destino_lng", None)
+                if latitude is not None and longitude is not None:
+                    maps_url = f"https://www.openstreetmap.org/?mlat={latitude}&mlon={longitude}#map=17/{latitude}/{longitude}"
+                else:
+                    query = f"{destination}, {field(delivery, 'sector', 'Santo Domingo')}, República Dominicana"
+                    maps_url = f"https://www.openstreetmap.org/search?query={requests.utils.quote(str(query))}"
+                st.markdown(f'<a class="map-link" href="{maps_url}" target="_blank">Vista mapa</a>', unsafe_allow_html=True)
         if visible_deliveries.empty:
             st.info("No hay entregas en este estado.")
     else:
